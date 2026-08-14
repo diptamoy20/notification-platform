@@ -1,0 +1,10 @@
+{
+  "name": "notification-core",
+  "version": "1.0.0",
+  "description": "Core notification backend plugin",
+  "main": "index.js",
+  "dependencies": {
+    "nodemailer": "^9.0.5",
+    "zod": "^3.22.0"
+  }
+}
