@@ -1,5 +1,7 @@
 const { createUsersRouter } = require('./modules/users/users.routes');
 const { createNotificationsRouter } = require('./modules/notifications/notifications.routes');
+const { createAuthRouter } = require('./modules/auth/auth.routes');
+const { createAuthMiddleware } = require('./middleware/auth.middleware');
 
 /**
  * Initializes the notification module as an Express Router.
@@ -11,6 +13,8 @@ const { createNotificationsRouter } = require('./modules/notifications/notificat
  * @param {Function} config.asyncHandler - Optional. Async error wrapper for routes.
  * @param {Function} config.validate - Optional. Validation middleware factory.
  * @param {Object} config.apiResponse - Optional. API response helpers (success, badRequest, notFound).
+ * @param {string} config.jwtSecret - Required for auth. JWT secret key.
+ * @param {string} config.jwtExpiresIn - Optional. JWT expiration time (default '7d').
  * 
  * @returns {import('express').Router} Express router containing all notification and user routes.
  */
@@ -31,7 +35,9 @@ function initNotificationModule({
     success: (res, data = null, message = 'Success') => res.status(200).json({ success: true, data, message }),
     badRequest: (res, message = 'Bad request', data = null) => res.status(400).json({ success: false, message, data }),
     notFound: (res, message = 'Resource not found') => res.status(404).json({ success: false, message, data: null }),
-  }
+  },
+  jwtSecret,
+  jwtExpiresIn
 }) {
   if (!dbAdapter) {
     throw new Error('initNotificationModule: dbAdapter is required in configuration');
@@ -39,18 +45,30 @@ function initNotificationModule({
   if (!Router) {
     throw new Error('initNotificationModule: Router is required in configuration');
   }
+  if (!jwtSecret) {
+    throw new Error('initNotificationModule: jwtSecret is required in configuration');
+  }
 
   const router = Router();
   
+  // Create middleware
+  const requireAuth = createAuthMiddleware({ jwtSecret, apiResponse });
+
   // Create modular routers and inject dependencies
   const usersDeps = { ...apiResponse, asyncHandler, Router };
   const notificationsDeps = { ...apiResponse, asyncHandler, validate, Router, logger };
+  const authDeps = { ...apiResponse, asyncHandler, validate, Router, logger, jwtSecret, jwtExpiresIn };
   
+  const authRoutes = createAuthRouter(dbAdapter, authDeps);
   const usersRoutes = createUsersRouter(dbAdapter, usersDeps);
   const notificationsRoutes = createNotificationsRouter(dbAdapter, notificationsDeps);
 
-  router.use('/users', usersRoutes);
-  router.use('/notifications', notificationsRoutes);
+  // Mount unauthenticated routes
+  router.use('/auth', authRoutes);
+
+  // Mount authenticated routes
+  router.use('/users', requireAuth, usersRoutes);
+  router.use('/notifications', requireAuth, notificationsRoutes);
 
   return router;
 }

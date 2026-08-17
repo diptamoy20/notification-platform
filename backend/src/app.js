@@ -50,7 +50,9 @@ const notificationRouter = initNotificationModule({
   logger,
   asyncHandler,
   validate,
-  apiResponse: { success, badRequest, notFound: notFoundResponse }
+  apiResponse: { success, badRequest, notFound: notFoundResponse },
+  jwtSecret: env.JWT_SECRET,
+  jwtExpiresIn: env.JWT_EXPIRES_IN
 });
 
 app.use('/api/v1', notificationRouter);

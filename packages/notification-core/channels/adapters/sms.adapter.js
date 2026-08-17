@@ -8,7 +8,7 @@ class SMSProvider extends NotificationProvider {
    */
   async send(user, message, config = {}) {
     const logger = config.logger || console;
-    
+
     if (!user.sms) {
       return { success: false, error: 'User has SMS disabled' };
     }
@@ -25,7 +25,7 @@ class SMSProvider extends NotificationProvider {
       formattedNumber = '+' + formattedNumber;
 
       logger.info(`[SMS] Sending SMS to ${formattedNumber} via Brevo...`);
-      
+
       const response = await fetch('https://api.brevo.com/v3/transactionalSMS/sms', {
         method: 'POST',
         headers: {

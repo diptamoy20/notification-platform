@@ -65,6 +65,23 @@ module.exports = function createPostgresAdapter(prisma) {
       });
     },
 
+    async getUserByIdentifier(identifier) {
+      return prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: identifier },
+            { mobileNumber: identifier },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          mobileNumber: true,
+          email: true,
+        },
+      });
+    },
+
     async getUsersByIds(ids) {
       return prisma.user.findMany({
         where: { id: { in: ids } },

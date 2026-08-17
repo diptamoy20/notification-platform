@@ -38,14 +38,41 @@ class EmailProvider extends NotificationProvider {
     }
 
     try {
-      logger.info(`[Email] Sending email to ${user.email} via Brevo SMTP...`);
-      await transporter.sendMail({
-        from: process.env.EMAIL_FROM,
-        to: user.email,
-        subject: config?.subject || 'Notification',
-        text: message,
-      });
-      logger.info(`[Email] Successfully sent to ${user.email}`);
+      const templateId = process.env.BREVO_EMAIL_TEMPLATE_ID;
+      
+      if (templateId) {
+        logger.info(`[Email] Sending email to ${user.email} via Brevo API (Template ID: ${templateId})...`);
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'api-key': process.env.BREVO_API_KEY,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            to: [{ email: user.email, name: user.name || user.email }],
+            templateId: parseInt(templateId, 10),
+            params: {
+              message: message
+            }
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Brevo API Error: ${JSON.stringify(errorData)}`);
+        }
+        logger.info(`[Email] Successfully sent to ${user.email} using template`);
+      } else {
+        logger.info(`[Email] Sending email to ${user.email} via Brevo SMTP...`);
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM,
+          to: user.email,
+          subject: config?.subject || 'Notification',
+          text: message,
+        });
+        logger.info(`[Email] Successfully sent to ${user.email}`);
+      }
       return { success: true };
     } catch (error) {
       logger.error(`[Email] Failed to send: ${error.message}`);

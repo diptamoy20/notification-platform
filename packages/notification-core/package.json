@@ -4,6 +4,7 @@
   "description": "Core notification backend plugin",
   "main": "index.js",
   "dependencies": {
+    "jsonwebtoken": "^9.0.3",
     "nodemailer": "^9.0.5",
     "zod": "^3.22.0"
   }
