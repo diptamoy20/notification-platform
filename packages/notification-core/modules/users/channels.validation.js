@@ -10,6 +10,7 @@ const updateChannelsSchema = z.object({
   emailChannel: z.boolean().optional(),
   whatsapp:     z.boolean().optional(),
   inapp:        z.boolean().optional(),
+  push:         z.boolean().optional(),
 }).refine(
   (data) => Object.keys(data).length > 0,
   { message: 'At least one channel field must be provided.' }
@@ -17,13 +18,14 @@ const updateChannelsSchema = z.object({
 
 /**
  * Schema for PUT /api/v1/users/:id/channels
- * All four channels are required — a full replace of preferences.
+ * All channels are required — a full replace of preferences.
  */
 const replaceChannelsSchema = z.object({
   sms:          z.boolean(),
   emailChannel: z.boolean(),
   whatsapp:     z.boolean(),
   inapp:        z.boolean(),
+  push:         z.boolean(),
 });
 
 module.exports = { updateChannelsSchema, replaceChannelsSchema };

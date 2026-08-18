@@ -19,6 +19,8 @@ model User {
   emailChannel  Boolean  @default(false) @map("email_channel")
   whatsapp      Boolean  @default(false)
   inapp         Boolean  @default(false)
+  push          Boolean  @default(false)
+  fcmToken      String?  @map("fcm_token")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

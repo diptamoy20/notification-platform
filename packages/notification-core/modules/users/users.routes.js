@@ -60,12 +60,29 @@ function createUsersRouter(dbAdapter, { success, badRequest, notFound, asyncHand
     return success(res, updated, 'Channel preferences patched successfully');
   };
 
+  const updateFcmToken = async (req, res) => {
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) return badRequest(res, 'User id must be a valid integer');
+
+    const { fcmToken } = req.body;
+    if (!fcmToken || typeof fcmToken !== 'string') {
+      return badRequest(res, 'fcmToken is required and must be a string');
+    }
+
+    const user = await dbAdapter.getUserById(userId);
+    if (!user) return notFound(res, `User with id ${userId} not found`);
+
+    const updated = await dbAdapter.updateFcmToken(userId, fcmToken);
+    return success(res, updated, 'FCM token updated successfully');
+  };
+
   // ── Routes ───────────────────────────────────────────────────────────────
   
   router.get('/', asyncHandler(getUsers));
   router.get('/:id/channels', asyncHandler(getChannels));
   router.put('/:id/channels', asyncHandler(replaceChannels));
   router.patch('/:id/channels', asyncHandler(patchChannels));
+  router.patch('/:id/fcm-token', asyncHandler(updateFcmToken));
 
   return router;
 }

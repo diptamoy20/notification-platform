@@ -2,6 +2,7 @@ const smsAdapter = require('./adapters/sms.adapter');
 const emailAdapter = require('./adapters/email.adapter');
 const whatsappAdapter = require('./adapters/whatsapp.adapter');
 const inappAdapter = require('./adapters/inapp.adapter');
+const pushAdapter = require('./adapters/push.adapter');
 
 /**
  * Channel Registry
@@ -31,5 +32,11 @@ module.exports = {
     label: 'In-App',
     requiredParams: [],
     adapter: inappAdapter,
+  },
+  push: {
+    key: 'push',
+    label: 'Push Notification',
+    requiredParams: ['firebaseServiceAccountPath'],
+    adapter: pushAdapter,
   },
 };

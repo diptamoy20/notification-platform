@@ -25,6 +25,37 @@ class WhatsAppProvider extends NotificationProvider {
 
       logger.info(`[WhatsApp] Sending message to ${formattedNumber} via Meta API...`);
       
+      const templateName = process.env.WHATSAPP_TEMPLATE_NAME || 'system_alert_';
+      
+      let payload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: formattedNumber,
+        type: "template",
+        template: {
+          name: templateName,
+          language: {
+            code: (templateName === 'hello_world' || templateName === 'system_alert_') ? 'en_US' : 'en'
+          }
+        }
+      };
+
+      // If they are using a custom template with variables, pass the message as a parameter.
+      // 'hello_world' is the only built-in template without body variables.
+      if (templateName !== 'hello_world') {
+        payload.template.components = [
+          {
+            type: "body",
+            parameters: [
+              {
+                type: "text",
+                text: message || user.name || 'User'
+              }
+            ]
+          }
+        ];
+      }
+
       const response = await fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
         method: 'POST',
         headers: {
@@ -32,16 +63,7 @@ class WhatsAppProvider extends NotificationProvider {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          recipient_type: "individual",
-          to: formattedNumber,
-          type: "text",
-          text: {
-            preview_url: false,
-            body: message
-          }
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {

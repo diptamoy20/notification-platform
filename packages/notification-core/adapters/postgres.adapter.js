@@ -39,6 +39,8 @@ module.exports = function createPostgresAdapter(prisma) {
             emailChannel: true,
             whatsapp: true,
             inapp: true,
+            push: true,
+            fcmToken: true,
             createdAt: true,
           },
         }),
@@ -60,6 +62,8 @@ module.exports = function createPostgresAdapter(prisma) {
           emailChannel: true,
           whatsapp: true,
           inapp: true,
+          push: true,
+          fcmToken: true,
           updatedAt: true,
         },
       });
@@ -94,6 +98,8 @@ module.exports = function createPostgresAdapter(prisma) {
           emailChannel: true,
           whatsapp: true,
           inapp: true,
+          push: true,
+          fcmToken: true,
         },
       });
     },
@@ -111,6 +117,8 @@ module.exports = function createPostgresAdapter(prisma) {
           emailChannel: true,
           whatsapp: true,
           inapp: true,
+          push: true,
+          fcmToken: true,
           updatedAt: true,
         },
       });
@@ -144,6 +152,22 @@ module.exports = function createPostgresAdapter(prisma) {
       ]);
 
       return { logs, total, page, limit, totalPages: Math.ceil(total / limit) };
+    },
+
+    /**
+     * Update the FCM device token for a user.
+     * Called from the React Native app when the device registers/refreshes its FCM token.
+     */
+    async updateFcmToken(id, fcmToken) {
+      return prisma.user.update({
+        where: { id },
+        data: { fcmToken },
+        select: {
+          id: true,
+          name: true,
+          fcmToken: true,
+        },
+      });
     },
   };
 };
