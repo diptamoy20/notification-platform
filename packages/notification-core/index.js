@@ -66,11 +66,16 @@ function initNotificationModule({
   // Mount unauthenticated routes
   router.use('/auth', authRoutes);
 
-  // Mount authenticated routes
-  router.use('/users', requireAuth, usersRoutes);
-  router.use('/notifications', requireAuth, notificationsRoutes);
+  // Web admin routes (no authentication required as per user request)
+  router.use('/users', usersRoutes);
+  router.use('/notifications', notificationsRoutes);
+
+  // Example of how to protect future mobile-only routes:
+  // router.use('/mobile/profile', requireAuth, mobileProfileRoutes);
 
   return router;
 }
 
-module.exports = { initNotificationModule };
+const { startNotificationWorker } = require('./workers/notification.worker');
+
+module.exports = { initNotificationModule, startNotificationWorker };

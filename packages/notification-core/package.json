@@ -4,6 +4,8 @@
   "description": "Core notification backend plugin",
   "main": "index.js",
   "dependencies": {
+    "bullmq": "^6.1.2",
+    "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^9.0.5",
     "zod": "^3.22.0"

@@ -66,7 +66,6 @@ export const NotificationPanel = ({ adapter }) => {
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [message, setMessage] = useState('');
-  const [skippedEmailUsers, setSkippedEmailUsers] = useState([]);
 
   const toggleRow = useCallback((id) => {
     setSelectedIds((prev) => {
@@ -94,24 +93,9 @@ export const NotificationPanel = ({ adapter }) => {
     send({
       userIds: [...selectedIds],
       message,
-      onSuccess: (dispatchResults) => {
+      onSuccess: () => {
         setMessage('');
         setSelectedIds(new Set());
-        
-        // Find users who were explicitly skipped for email
-        if (dispatchResults) {
-          const skipped = dispatchResults
-            .filter((userResult) => 
-              userResult.channels.some(
-                (c) => c.channel === 'emailChannel' && c.status === 'skipped'
-              )
-            )
-            .map((u) => u.name);
-
-          if (skipped.length > 0) {
-            setSkippedEmailUsers(skipped);
-          }
-        }
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -119,15 +103,7 @@ export const NotificationPanel = ({ adapter }) => {
 
   return (
     <div className="w-full" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-      
-      <Modal 
-        isOpen={skippedEmailUsers.length > 0} 
-        onClose={() => setSkippedEmailUsers([])}
-        title="Email Notifications Skipped"
-      >
-        <p className="mb-2">The following selected users have not opted in for Email notifications and were not emailed:</p>
-        <p className="font-semibold">{skippedEmailUsers.join(', ')}</p>
-      </Modal>
+
 
       <div className="max-w-10xl mx-auto px-4 md:px-6 py-6">
         {/* Search toolbar */}

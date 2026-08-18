@@ -26,26 +26,26 @@ const useNotifications = (adapter) => {
 
     try {
       const res = await adapter.sendNotification({ userIds, message });
-      const { results: dispatchResults, summary } = res.data;
+      const { summary } = res.data;
 
-      setResults(dispatchResults);
+      // dispatchResults are no longer returned synchronously since jobs are queued
+      setResults(null);
 
-      const failCount = summary.totalFailed;
-      const sentCount = summary.totalSent;
+      const queuedCount = summary.totalQueued || 0;
 
-      if (failCount === 0) {
+      if (queuedCount > 0) {
         toast.success(
-          `✅ Sent ${sentCount} notification${sentCount !== 1 ? 's' : ''} successfully!`,
+          `✅ Queued ${queuedCount} notification job${queuedCount !== 1 ? 's' : ''} successfully!`,
           { duration: 4000 }
         );
       } else {
         toast(
-          `⚠️ Sent: ${sentCount}  Failed: ${failCount}`,
+          `⚠️ No notifications were queued (users might not have opted into any channels)`,
           { icon: '⚠️', duration: 5000, style: { background: '#78350f', color: '#fef3c7' } }
         );
       }
 
-      onSuccess?.(dispatchResults);
+      onSuccess?.();
     } catch (err) {
       toast.error(`Failed to send: ${err.message}`);
     } finally {

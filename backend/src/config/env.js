@@ -8,6 +8,8 @@ const envSchema = z.object({
   FRONTEND_URL: z.string({ required_error: 'FRONTEND_URL is required' }).url(),
   JWT_SECRET:   z.string({ required_error: 'JWT_SECRET is required' }).min(8),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  REDIS_HOST:   z.string().default('localhost'),
+  REDIS_PORT:   z.string().default('6379'),
 });
 
 const parsed = envSchema.safeParse(process.env);

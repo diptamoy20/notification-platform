@@ -31,3 +31,10 @@ out/
 *.sw?
 .DS_Store
 Thumbs.db
+
+# Redis and temporary files
+Redis/
+Redis.zip
+dump.rdb
+backend/check*.js
+gemini-refactor-to-plugin-prompt.md

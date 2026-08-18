@@ -1,15 +1,14 @@
 const { sendNotificationSchema } = require('./notifications.validation');
 const channelRegistry = require('../../channels/channel.registry');
-// logger is still used, but ideally it should be injected too if we want a pure plugin.
-// For now we'll require it, or it can be passed in config. Let's just require it or pass it.
-// The prompt says "must not assume Express-specific globals", logger is just a local util, but let's assume it's injected or we just console.log if none.
-// We'll use a simple fallback if logger is not injected.
 
 function createNotificationsRouter(dbAdapter, { success, badRequest, notFound, asyncHandler, validate, Router, logger = console }) {
   const router = Router();
 
   // ── Service Logic ────────────────────────────────────────────────────────
-  
+
+  const { getNotificationQueue } = require('../../queue/notification.queue');
+  const notificationQueue = getNotificationQueue({ redisHost: process.env.REDIS_HOST, redisPort: process.env.REDIS_PORT });
+
   const sendNotifications = async ({ userIds, message }) => {
     const users = await dbAdapter.getUsersByIds(userIds);
 
@@ -20,49 +19,26 @@ function createNotificationsRouter(dbAdapter, { success, badRequest, notFound, a
       throw err;
     }
 
-    const results = [];
-    const logEntries = [];
+    let queuedCount = 0;
 
-    await Promise.all(
-      users.map(async (user) => {
-          const channelResults = [];
-          for (const [channelKey, registryEntry] of Object.entries(channelRegistry)) {
-            if (user[channelKey] === true) {
-              // Active channel
-              const result = await registryEntry.adapter.send(user, message, { logger });
-              logEntries.push({
-                userId:  user.id,
-                channel: channelKey,
-                message,
-                status:  result.success ? 'sent' : 'failed',
-                error:   result.error ?? null,
-              });
-              channelResults.push({ channel: channelKey, ...result });
-            } else {
-              // Skipped channel
-              channelResults.push({
-                channel: channelKey,
-                status: 'skipped',
-                reason: 'User has not opted in for this channel',
-              });
-            }
-          }
-
-          results.push({ userId: user.id, name: user.name, channels: channelResults });
-        })
-    );
-
-    // Persist all log entries 
-    if (logEntries.length) {
-      await Promise.all(logEntries.map(log => dbAdapter.saveNotificationLog(log)));
+    for (const user of users) {
+      for (const [channelKey, registryEntry] of Object.entries(channelRegistry)) {
+        if (user[channelKey] === true) {
+          // Enqueue a job for this specific user and channel
+          await notificationQueue.add('send-notification', {
+            user,
+            message,
+            channelKey,
+          });
+          queuedCount++;
+        }
+      }
     }
 
-    const totalSent   = logEntries.filter((l) => l.status === 'sent').length;
-    const totalFailed = logEntries.filter((l) => l.status === 'failed').length;
+    logger.info(`Notification jobs queued successfully — total jobs: ${queuedCount}, users: ${users.length}`);
 
-    logger.info(`Notification dispatch complete — sent: ${totalSent}, failed: ${totalFailed}, users: ${users.length}`);
-
-    return { results, summary: { totalSent, totalFailed, usersProcessed: users.length } };
+    // Since it's async, we just return the counts of what was queued.
+    return { summary: { totalQueued: queuedCount, usersProcessed: users.length } };
   };
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -81,10 +57,46 @@ function createNotificationsRouter(dbAdapter, { success, badRequest, notFound, a
     return success(res, logs, 'Notification logs fetched successfully');
   };
 
+  // ── Webhooks ─────────────────────────────────────────────────────────────
+
+  const verifyWhatsAppWebhook = (req, res) => {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+
+    if (mode && token) {
+      if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+        logger.info('[WhatsApp] Webhook verified successfully');
+        return res.status(200).send(challenge);
+      } else {
+        return res.status(403).send('Forbidden');
+      }
+    }
+    return res.status(400).send('Bad Request');
+  };
+
+  const handleWhatsAppWebhookEvent = async (req, res) => {
+    const body = req.body;
+    
+    if (body.object === 'whatsapp_business_account') {
+      logger.info('[WhatsApp Webhook] Event received:', JSON.stringify(body, null, 2));
+      
+      // Here we could handle incoming messages, delivery statuses, etc.
+      // For example, updating the notification status in the database based on message IDs.
+      
+      return res.status(200).send('EVENT_RECEIVED');
+    }
+    
+    return res.status(404).send('Not Found');
+  };
+
   // ── Routes ───────────────────────────────────────────────────────────────
 
   router.post('/send', validate(sendNotificationSchema), asyncHandler(handleSendNotification));
-  
+
+  router.get('/webhook/whatsapp', verifyWhatsAppWebhook);
+  router.post('/webhook/whatsapp', asyncHandler(handleWhatsAppWebhookEvent));
+
   // Only register logs if dbAdapter supports it
   if (typeof dbAdapter.getNotificationLogs === 'function') {
     router.get('/logs', asyncHandler(getLogs));
