@@ -3,7 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import DashboardPage from './pages/DashboardPage';
 
 const App = () => (
-  <BrowserRouter>
+  <BrowserRouter basename="/notification-dashboard">
     <Toaster
       position="top-right"
       toastOptions={{
