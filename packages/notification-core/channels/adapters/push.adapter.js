@@ -47,8 +47,8 @@ class PushProvider extends NotificationProvider {
   async send(user, message, config = {}) {
     const logger = config.logger || console;
 
-    if (!user.push) {
-      return { success: false, error: 'User has Push notifications disabled' };
+    if (!user.inapp) {
+      return { success: false, error: 'User has In-App (Push) notifications disabled' };
     }
 
     if (!user.fcmToken) {

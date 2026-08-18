@@ -29,13 +29,7 @@ module.exports = {
   },
   inapp: {
     key: 'inapp',
-    label: 'In-App',
-    requiredParams: [],
-    adapter: inappAdapter,
-  },
-  push: {
-    key: 'push',
-    label: 'Push Notification',
+    label: 'In-App / Push Notification',
     requiredParams: ['firebaseServiceAccountPath'],
     adapter: pushAdapter,
   },
