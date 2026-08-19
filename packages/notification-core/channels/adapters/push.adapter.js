@@ -1,7 +1,7 @@
 const NotificationProvider = require('./provider.interface');
 
-let admin = null;
 let initialized = false;
+let getMessaging = null;
 
 /**
  * Initialize Firebase Admin SDK (singleton).
@@ -11,7 +11,8 @@ function initFirebase(logger) {
   if (initialized) return;
 
   try {
-    const firebaseAdmin = require('firebase-admin');
+    const { initializeApp, cert } = require('firebase-admin/app');
+    const { getMessaging: _getMessaging } = require('firebase-admin/messaging');
     const path = require('path');
 
     const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
@@ -25,11 +26,11 @@ function initFirebase(logger) {
     const resolvedPath = path.resolve(process.cwd(), serviceAccountPath);
     const serviceAccount = require(resolvedPath);
 
-    firebaseAdmin.initializeApp({
-      credential: firebaseAdmin.credential.cert(serviceAccount),
+    initializeApp({
+      credential: cert(serviceAccount),
     });
 
-    admin = firebaseAdmin;
+    getMessaging = _getMessaging;
     initialized = true;
     logger.info('[Push] Firebase Admin SDK initialized successfully.');
   } catch (error) {
@@ -58,7 +59,7 @@ class PushProvider extends NotificationProvider {
     // Lazy-initialize Firebase
     initFirebase(logger);
 
-    if (!admin) {
+    if (!getMessaging) {
       return { success: false, error: 'Firebase Admin SDK not initialized — check FIREBASE_SERVICE_ACCOUNT_PATH' };
     }
 
@@ -81,7 +82,7 @@ class PushProvider extends NotificationProvider {
         },
       };
 
-      const response = await admin.messaging().send(fcmMessage);
+      const response = await getMessaging().send(fcmMessage);
       logger.info(`[Push] Successfully sent to user ${user.id} (FCM ID: ${response})`);
       return { success: true };
     } catch (error) {
