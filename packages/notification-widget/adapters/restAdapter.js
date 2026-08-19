@@ -21,12 +21,19 @@ export function createRestAdapter({ baseUrl }) {
       }
     },
     
-    sendNotification: async ({ userIds, message }) => {
+    sendNotification: async (payload) => {
       try {
-        const response = await axios.post(`${baseUrl}/notifications/send`, {
-          userIds,
-          message,
-        });
+        /* OLD CODE START */
+        // const response = await axios.post(`${baseUrl}/notifications/send`, {
+        //   userIds,
+        //   message,
+        // });
+        /* OLD CODE END */
+        
+        /* NEW CODE START */
+        const response = await axios.post(`${baseUrl}/notifications/send`, payload);
+        /* NEW CODE END */
+        
         return response.data;
       } catch (error) {
         const message = error.response?.data?.message || error.message || 'Network error';

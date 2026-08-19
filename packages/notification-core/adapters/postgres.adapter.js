@@ -169,5 +169,11 @@ module.exports = function createPostgresAdapter(prisma) {
         },
       });
     },
+
+    async getTemplateByKey(key) {
+      return prisma.notificationTemplate.findUnique({
+        where: { key }
+      });
+    }
   };
 };

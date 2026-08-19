@@ -11,13 +11,15 @@ const useNotifications = (adapter) => {
   const [sending, setSending]   = useState(false);
   const [results, setResults]   = useState(null);
 
-  const send = useCallback(async ({ userIds, message, onSuccess }) => {
+  const send = useCallback(async ({ userIds, message, templateKey, templateVariables, onSuccess }) => {
     if (!userIds.length) {
       toast.error('Please select at least one user.');
       return;
     }
-    if (!message.trim()) {
-      toast.error('Message cannot be empty.');
+    
+    // If neither message nor templateKey is provided, show error
+    if (!message?.trim() && !templateKey) {
+      toast.error('Message or Template Key must be provided.');
       return;
     }
 
@@ -25,7 +27,20 @@ const useNotifications = (adapter) => {
     setResults(null);
 
     try {
-      const res = await adapter.sendNotification({ userIds, message });
+      /* OLD CODE START */
+      // const res = await adapter.sendNotification({ userIds, message });
+      /* OLD CODE END */
+      
+      /* NEW CODE START */
+      const payload = { userIds };
+      if (message) payload.message = message;
+      if (templateKey) {
+        payload.templateKey = templateKey;
+        payload.templateVariables = templateVariables || {};
+      }
+      
+      const res = await adapter.sendNotification(payload);
+      /* NEW CODE END */
       const { summary } = res.data;
 
       // dispatchResults are no longer returned synchronously since jobs are queued

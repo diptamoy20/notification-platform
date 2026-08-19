@@ -9,7 +9,11 @@ function createNotificationsRouter(dbAdapter, { success, badRequest, notFound, a
   const { getNotificationQueue } = require('../../queue/notification.queue');
   const notificationQueue = getNotificationQueue({ redisHost: process.env.REDIS_HOST, redisPort: process.env.REDIS_PORT });
 
-  const sendNotifications = async ({ userIds, message }) => {
+  const NotificationDispatcher = require('./NotificationDispatcher');
+  const dispatcher = new NotificationDispatcher(dbAdapter, notificationQueue, logger);
+
+  const sendNotifications = async (options) => {
+    const { userIds } = options;
     const users = await dbAdapter.getUsersByIds(userIds);
 
     if (!users.length) {
@@ -21,19 +25,28 @@ function createNotificationsRouter(dbAdapter, { success, badRequest, notFound, a
 
     let queuedCount = 0;
 
+    /* OLD NOTIFICATION SETUP START */
+    // for (const user of users) {
+    //   for (const [channelKey, registryEntry] of Object.entries(channelRegistry)) {
+    //     if (user[channelKey] === true) {
+    //       // Enqueue a job for this specific user and channel
+    //       await notificationQueue.add('send-notification', {
+    //         user,
+    //         message,
+    //         channelKey,
+    //       });
+    //       queuedCount++;
+    //     }
+    //   }
+    // }
+    /* OLD NOTIFICATION SETUP END */
+
+    /* NEW MASTER TEMPLATE INTEGRATION START */
     for (const user of users) {
-      for (const [channelKey, registryEntry] of Object.entries(channelRegistry)) {
-        if (user[channelKey] === true) {
-          // Enqueue a job for this specific user and channel
-          await notificationQueue.add('send-notification', {
-            user,
-            message,
-            channelKey,
-          });
-          queuedCount++;
-        }
-      }
+      const userQueuedCount = await dispatcher.dispatch(user, options);
+      queuedCount += userQueuedCount;
     }
+    /* NEW MASTER TEMPLATE INTEGRATION END */
 
     logger.info(`Notification jobs queued successfully — total jobs: ${queuedCount}, users: ${users.length}`);
 

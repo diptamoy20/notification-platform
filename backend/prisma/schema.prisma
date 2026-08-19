@@ -42,3 +42,14 @@ model NotificationLog {
 
   @@map("notification_logs")
 }
+
+model NotificationTemplate {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  subject   String?  
+  body      String   
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_templates")
+}
