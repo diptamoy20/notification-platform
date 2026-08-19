@@ -46,8 +46,13 @@ model NotificationLog {
 model NotificationTemplate {
   id        Int      @id @default(autoincrement())
   key       String   @unique
-  subject   String?  
-  body      String   
+  subject         String?  
+  emailBody       String?  @map("email_body")
+  smsBody         String?  @map("sms_body")
+  whatsappBody    String?  @map("whatsapp_body")
+  pushTitle       String?  @map("push_title")
+  pushBody        String?  @map("push_body")
+  body            String   
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

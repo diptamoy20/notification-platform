@@ -47,6 +47,7 @@ class PushProvider extends NotificationProvider {
    */
   async send(user, message, config = {}) {
     const logger = config.logger || console;
+    const title = config.subject || 'New Notification';
 
     if (!user.push) {
       return { success: false, error: 'User has Push notifications disabled' };
@@ -69,7 +70,7 @@ class PushProvider extends NotificationProvider {
       const fcmMessage = {
         token: user.fcmToken,
         notification: {
-          title: 'New Notification',
+          title: title,
           body: message,
         },
         // Optional: Android-specific settings

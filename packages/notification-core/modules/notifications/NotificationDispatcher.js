@@ -48,27 +48,39 @@ class NotificationDispatcher {
    * @param {Object} [options.templateVariables]
    */
   async dispatch(user, options) {
-    let finalMessage = options.message;
-    let subject = 'New Notification';
+    let fallbackMessage = options.message;
+    let fallbackSubject = 'Notification Message';
+    let template = null;
 
-    // 1. Fetch and compile template if provided
-    if (options.templateKey) {
+    // Determine which templateKey to load:
+    // • If caller supplied one, use it.
+    // • If caller only supplied a raw message, auto-wrap it in GENERAL_NOTIFICATION.
+    const templateKey = options.templateKey || (options.message ? 'GENERAL_NOTIFICATION' : null);
+    // Variables: merge caller-supplied vars + auto-inject customerName from user record
+    const templateVariables = {
+      customerName: user.name || 'there',
+      message: options.message || '',
+      ...(options.templateVariables || {}),
+    };
+
+    if (templateKey) {
       try {
-        const template = await this.dbAdapter.getTemplateByKey(options.templateKey);
+        template = await this.dbAdapter.getTemplateByKey(templateKey);
         if (template) {
-          finalMessage = this.compileTemplate(template.body, options.templateVariables || {}, true);
+          // Generic fallback body (used when no channel-specific body exists)
+          fallbackMessage = this.compileTemplate(template.body, templateVariables, false);
           if (template.subject) {
-            subject = this.compileTemplate(template.subject, options.templateVariables || {}, false);
+            fallbackSubject = this.compileTemplate(template.subject, templateVariables, false);
           }
         } else {
-          this.logger.warn(`Template with key '${options.templateKey}' not found.`);
+          this.logger.warn(`Template with key '${templateKey}' not found — falling back to raw message.`);
         }
       } catch (err) {
-        this.logger.error(`Error fetching template '${options.templateKey}': ${err.message}`);
+        this.logger.error(`Error fetching template '${templateKey}': ${err.message}`);
       }
     }
 
-    if (!finalMessage) {
+    if (!fallbackMessage && !template) {
       this.logger.error(`Cannot dispatch to user ${user.id}: finalMessage is empty.`);
       return 0; // 0 jobs queued
     }
@@ -79,10 +91,30 @@ class NotificationDispatcher {
     for (const [channelKey, registryEntry] of Object.entries(channelRegistry)) {
       if (user[channelKey] === true) {
         try {
+          let channelMessage = fallbackMessage;
+          let channelSubject = fallbackSubject;
+
+          if (template) {
+            if (channelKey === 'emailChannel' && template.emailBody) {
+              channelMessage = this.compileTemplate(template.emailBody, templateVariables, false);
+            } else if (channelKey === 'sms' && template.smsBody) {
+              channelMessage = this.compileTemplate(template.smsBody, templateVariables, false);
+            } else if (channelKey === 'whatsapp' && template.whatsappBody) {
+              channelMessage = this.compileTemplate(template.whatsappBody, templateVariables, false);
+            } else if (channelKey === 'push' && template.pushBody) {
+              channelMessage = this.compileTemplate(template.pushBody, templateVariables, false);
+              if (template.pushTitle) {
+                channelSubject = this.compileTemplate(template.pushTitle, templateVariables, false);
+              }
+            }
+          }
+
+          if (!channelMessage) continue;
+
           await this.notificationQueue.add('send-notification', {
             user,
-            message: finalMessage,
-            subject, // Passed for Email adapter
+            message: channelMessage,
+            subject: channelSubject, // Passed for Email adapter and Push title
             channelKey,
           });
           queuedCount++;
