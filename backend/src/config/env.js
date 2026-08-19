@@ -11,6 +11,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('7d'),
   REDIS_HOST:   z.string().default('localhost'),
   REDIS_PORT:   z.string().default('6379'),
+  FIREBASE_SERVICE_ACCOUNT_PATH: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
