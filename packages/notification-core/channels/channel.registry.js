@@ -1,6 +1,7 @@
 const smsAdapter = require('./adapters/sms.adapter');
 const emailAdapter = require('./adapters/email.adapter');
-const whatsappAdapter = require('./adapters/whatsapp.adapter');
+// const whatsappAdapter = require('./adapters/whatsapp.adapter');
+const whatsappAdapter = require('./adapters/ultramsg.adapter'); // Temporarily using UltraMsg
 const inappAdapter = require('./adapters/inapp.adapter');
 const pushAdapter = require('./adapters/push.adapter');
 
