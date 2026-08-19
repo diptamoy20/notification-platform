@@ -12,7 +12,7 @@ const envSchema = z.object({
   REDIS_HOST:   z.string().default('localhost'),
   REDIS_PORT:   z.string().default('6379'),
   FIREBASE_SERVICE_ACCOUNT_PATH: z.string().optional(),
-});
+}).passthrough();
 
 const parsed = envSchema.safeParse(process.env);
 

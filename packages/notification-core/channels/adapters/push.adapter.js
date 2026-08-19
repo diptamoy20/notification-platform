@@ -7,7 +7,7 @@ let getMessaging = null;
  * Initialize Firebase Admin SDK (singleton).
  * Called lazily on first send attempt.
  */
-function initFirebase(logger) {
+function initFirebase(logger, config) {
   if (initialized) return;
 
   try {
@@ -15,7 +15,7 @@ function initFirebase(logger) {
     const { getMessaging: _getMessaging } = require('firebase-admin/messaging');
     const path = require('path');
 
-    const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+    const serviceAccountPath = config.FIREBASE_SERVICE_ACCOUNT_PATH;
     if (!serviceAccountPath) {
       logger.warn('[Push] FIREBASE_SERVICE_ACCOUNT_PATH not set in .env — push notifications will fail.');
       initialized = true;
@@ -48,8 +48,8 @@ class PushProvider extends NotificationProvider {
   async send(user, message, config = {}) {
     const logger = config.logger || console;
 
-    if (!user.inapp) {
-      return { success: false, error: 'User has In-App (Push) notifications disabled' };
+    if (!user.push) {
+      return { success: false, error: 'User has Push notifications disabled' };
     }
 
     if (!user.fcmToken) {
@@ -57,7 +57,7 @@ class PushProvider extends NotificationProvider {
     }
 
     // Lazy-initialize Firebase
-    initFirebase(logger);
+    initFirebase(logger, config);
 
     if (!getMessaging) {
       return { success: false, error: 'Firebase Admin SDK not initialized — check FIREBASE_SERVICE_ACCOUNT_PATH' };

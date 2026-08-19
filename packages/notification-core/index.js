@@ -37,7 +37,8 @@ function initNotificationModule({
     notFound: (res, message = 'Resource not found') => res.status(404).json({ success: false, message, data: null }),
   },
   jwtSecret,
-  jwtExpiresIn
+  jwtExpiresIn,
+  config = {}
 }) {
   if (!dbAdapter) {
     throw new Error('initNotificationModule: dbAdapter is required in configuration');
@@ -56,7 +57,7 @@ function initNotificationModule({
 
   // Create modular routers and inject dependencies
   const usersDeps = { ...apiResponse, asyncHandler, Router };
-  const notificationsDeps = { ...apiResponse, asyncHandler, validate, Router, logger };
+  const notificationsDeps = { ...apiResponse, asyncHandler, validate, Router, logger, config };
   const authDeps = { ...apiResponse, asyncHandler, validate, Router, logger, jwtSecret, jwtExpiresIn };
   
   const authRoutes = createAuthRouter(dbAdapter, authDeps);

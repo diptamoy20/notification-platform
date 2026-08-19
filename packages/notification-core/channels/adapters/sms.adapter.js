@@ -29,13 +29,13 @@ class SMSProvider extends NotificationProvider {
       const response = await fetch('https://api.brevo.com/v3/transactionalSMS/sms', {
         method: 'POST',
         headers: {
-          'api-key': process.env.BREVO_API_KEY,
+          'api-key': config.BREVO_API_KEY,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
         body: JSON.stringify({
           type: 'transactional',
-          sender: (process.env.BREVO_SMS_SENDER || 'Notify').substring(0, 11),
+          sender: (config.BREVO_SMS_SENDER || 'Notify').substring(0, 11),
           recipient: formattedNumber,
           content: message,
         })

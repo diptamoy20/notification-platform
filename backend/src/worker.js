@@ -3,6 +3,7 @@ const logger = require('./utils/logger');
 const { PrismaClient } = require('@prisma/client');
 const createPostgresAdapter = require('../../packages/notification-core/adapters/postgres.adapter');
 const { startNotificationWorker } = require('../../packages/notification-core');
+const { closeRedisConnection } = require('../../packages/notification-core/queue/redis.connection');
 
 const prisma = new PrismaClient();
 const dbAdapter = createPostgresAdapter(prisma);
@@ -11,6 +12,7 @@ logger.info(`Starting BullMQ worker on ${env.REDIS_HOST}:${env.REDIS_PORT}...`);
 
 const worker = startNotificationWorker({
   config: {
+    ...env,
     redisHost: env.REDIS_HOST,
     redisPort: env.REDIS_PORT,
   },
@@ -24,6 +26,7 @@ logger.info(`[WORKER] Listening for notification jobs on queue "notifications"`)
 const shutdown = async () => {
   logger.info('[WORKER] Shutting down gracefully...');
   await worker.close();
+  await closeRedisConnection();
   await prisma.$disconnect();
   process.exit(0);
 };

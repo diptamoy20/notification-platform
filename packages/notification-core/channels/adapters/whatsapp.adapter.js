@@ -25,7 +25,7 @@ class WhatsAppProvider extends NotificationProvider {
 
       logger.info(`[WhatsApp] Sending message to ${formattedNumber} via Meta API...`);
       
-      const templateName = process.env.WHATSAPP_TEMPLATE_NAME || 'system_alert_';
+      const templateName = config.WHATSAPP_TEMPLATE_NAME || 'system_alert_';
       
       let payload = {
         messaging_product: "whatsapp",
@@ -56,10 +56,10 @@ class WhatsAppProvider extends NotificationProvider {
         ];
       }
 
-      const response = await fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
+      const response = await fetch(`https://graph.facebook.com/v17.0/${config.WHATSAPP_PHONE_ID}/messages`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN}`,
+          'Authorization': `Bearer ${config.WHATSAPP_TOKEN}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },

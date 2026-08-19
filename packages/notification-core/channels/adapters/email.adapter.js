@@ -2,24 +2,32 @@
 const NotificationProvider = require('./provider.interface');
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false, // Brevo uses STARTTLS on 587, not implicit TLS
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+let transporterInstance = null;
 
-// Verify connection configuration on startup
-transporter.verify((error, success) => {
-  if (error) {
-    console.warn(`[Email Adapter] SMTP Connection Warning: ${error.message}`);
-  } else {
-    console.log('[Email Adapter] SMTP Connection verified successfully');
-  }
-});
+function getTransporter(config) {
+  if (transporterInstance) return transporterInstance;
+
+  transporterInstance = nodemailer.createTransport({
+    host: config.SMTP_HOST,
+    port: Number(config.SMTP_PORT),
+    secure: false, // Brevo uses STARTTLS on 587, not implicit TLS
+    auth: {
+      user: config.SMTP_USER,
+      pass: config.SMTP_PASS,
+    },
+  });
+
+  // Verify connection configuration on startup (async, doesn't block load)
+  transporterInstance.verify((error) => {
+    if (error) {
+      console.warn(`[Email Adapter] SMTP Connection Warning: ${error.message}`);
+    } else {
+      console.log('[Email Adapter] SMTP Connection verified successfully');
+    }
+  });
+
+  return transporterInstance;
+}
 
 class EmailProvider extends NotificationProvider {
   /**
@@ -38,7 +46,7 @@ class EmailProvider extends NotificationProvider {
     }
 
     try {
-      const templateId = process.env.BREVO_EMAIL_TEMPLATE_ID;
+      const templateId = config.BREVO_EMAIL_TEMPLATE_ID;
       
       if (templateId) {
         logger.info(`[Email] Sending email to ${user.email} via Brevo API (Template ID: ${templateId})...`);
@@ -46,7 +54,7 @@ class EmailProvider extends NotificationProvider {
           method: 'POST',
           headers: {
             'accept': 'application/json',
-            'api-key': process.env.BREVO_API_KEY,
+            'api-key': config.BREVO_API_KEY,
             'content-type': 'application/json'
           },
           body: JSON.stringify({
@@ -65,8 +73,9 @@ class EmailProvider extends NotificationProvider {
         logger.info(`[Email] Successfully sent to ${user.email} using template`);
       } else {
         logger.info(`[Email] Sending email to ${user.email} via Brevo SMTP...`);
+        const transporter = getTransporter(config);
         await transporter.sendMail({
-          from: process.env.EMAIL_FROM,
+          from: config.EMAIL_FROM,
           to: user.email,
           subject: config?.subject || 'Notification',
           text: message,

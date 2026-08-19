@@ -20,4 +20,11 @@ function getRedisConnection(config = {}) {
   return redisConnection;
 }
 
-module.exports = { getRedisConnection };
+async function closeRedisConnection() {
+  if (redisConnection) {
+    await redisConnection.quit();
+    redisConnection = null;
+  }
+}
+
+module.exports = { getRedisConnection, closeRedisConnection };

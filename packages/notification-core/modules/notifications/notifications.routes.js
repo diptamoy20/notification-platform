@@ -1,13 +1,13 @@
 const { sendNotificationSchema } = require('./notifications.validation');
 const channelRegistry = require('../../channels/channel.registry');
 
-function createNotificationsRouter(dbAdapter, { success, badRequest, notFound, asyncHandler, validate, Router, logger = console }) {
+function createNotificationsRouter(dbAdapter, { success, badRequest, notFound, asyncHandler, validate, Router, logger = console, config = {} }) {
   const router = Router();
 
   // ── Service Logic ────────────────────────────────────────────────────────
 
   const { getNotificationQueue } = require('../../queue/notification.queue');
-  const notificationQueue = getNotificationQueue({ redisHost: process.env.REDIS_HOST, redisPort: process.env.REDIS_PORT });
+  const notificationQueue = getNotificationQueue({ redisHost: config.REDIS_HOST, redisPort: config.REDIS_PORT });
 
   const NotificationDispatcher = require('./NotificationDispatcher');
   const dispatcher = new NotificationDispatcher(dbAdapter, notificationQueue, logger);
@@ -78,7 +78,7 @@ function createNotificationsRouter(dbAdapter, { success, badRequest, notFound, a
     const challenge = req.query['hub.challenge'];
 
     if (mode && token) {
-      if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+      if (mode === 'subscribe' && token === config.WHATSAPP_VERIFY_TOKEN) {
         logger.info('[WhatsApp] Webhook verified successfully');
         return res.status(200).send(challenge);
       } else {

@@ -18,7 +18,7 @@ function startNotificationWorker({ config, dbAdapter, logger = console }) {
       }
 
       // Send the notification using the existing adapter
-      const result = await registryEntry.adapter.send(user, message, { logger });
+      const result = await registryEntry.adapter.send(user, message, { logger, ...config });
 
       // If the adapter returned success: false, throw so BullMQ retries
       if (!result.success) {
@@ -44,6 +44,8 @@ function startNotificationWorker({ config, dbAdapter, logger = console }) {
   );
 
   worker.on('failed', async (job, err) => {
+    if (!job) return;
+    
     logger.error(`[WORKER] Job ${job.id} failed: ${err.message}`);
     
     // If it's the final failure (attempts exhausted), log it to the database

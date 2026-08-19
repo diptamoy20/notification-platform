@@ -25,8 +25,12 @@ class UltraMsgProvider extends NotificationProvider {
 
       logger.info(`[WhatsApp] Sending message to ${formattedNumber} via UltraMsg API...`);
       
-      const instanceId = process.env.ULTRAMSG_INSTANCE_ID || 'instance188780';
-      const token = process.env.ULTRAMSG_TOKEN || 'gcppdy2680sp9bs4';
+      const instanceId = config.ULTRAMSG_INSTANCE_ID;
+      const token = config.ULTRAMSG_TOKEN;
+      
+      if (!instanceId || !token) {
+        throw new Error('UltraMsg credentials not configured');
+      }
       
       const url = `https://api.ultramsg.com/${instanceId}/messages/chat`;
       

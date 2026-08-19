@@ -5,7 +5,7 @@ import Table from './components/Table/Table';
 import SearchBar from './components/SearchBar/SearchBar';
 import TextArea from './components/TextArea/TextArea';
 import Button from './components/Button/Button';
-import Modal from './components/Modal/Modal';
+
 // import ResultsPanel from './components/ResultsPanel/ResultsPanel'; // commented out for future use
 
 // Optional: if the widget wants to display channel dots based on the API response.

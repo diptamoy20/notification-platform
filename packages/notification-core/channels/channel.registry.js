@@ -2,7 +2,6 @@ const smsAdapter = require('./adapters/sms.adapter');
 const emailAdapter = require('./adapters/email.adapter');
 // const whatsappAdapter = require('./adapters/whatsapp.adapter');
 const whatsappAdapter = require('./adapters/ultramsg.adapter'); // Temporarily using UltraMsg
-const inappAdapter = require('./adapters/inapp.adapter');
 const pushAdapter = require('./adapters/push.adapter');
 
 /**
@@ -28,9 +27,9 @@ module.exports = {
     requiredParams: ['accountSid', 'authToken', 'senderNumber'],
     adapter: whatsappAdapter,
   },
-  inapp: {
-    key: 'inapp',
-    label: 'In-App / Push Notification',
+  push: {
+    key: 'push',
+    label: 'Push Notification (FCM)',
     requiredParams: ['firebaseServiceAccountPath'],
     adapter: pushAdapter,
   },
